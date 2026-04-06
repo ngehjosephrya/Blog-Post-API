@@ -1,23 +1,33 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../config/env.js';
+import { prisma } from '../lib/prisma.js';
 
-export const isAuthenticated = (req, res, next) => {
+export const authorize = async (req, res, next) => {
     try {
-         const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+        let token;
 
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: "You are not logged in"
-            });
+        if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            token = req.headers.authorization.split(' ')[1];
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.userId = decoded.userId;
+        if (!token) return res.status(401).json({
+            message: 'Unauthorized',
+        })
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        const user = await prisma.users.findUnique({ where: { id: decoded.userId } });
+
+        if(!user) return res.status(401).json({
+            message: 'Unauthorized',
+        })
+
+        req.user = user;
         next();
     } catch (error) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid or expired token"
-        });
+        res.status(401).json({
+            message:'Unauthorized',
+            error: error.message,
+        })
     }
 }
