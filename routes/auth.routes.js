@@ -1,4 +1,4 @@
-import { isAuthenticated } from "../middlewares/auth.middleware.js";
+import { isAuthenticated } from "../middlewares/authtoken.middleware.js";
 import { Router } from "express";
 import { signIn, signOut, signUp } from "../controllers/auth.controller.js";
 

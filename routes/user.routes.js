@@ -1,14 +1,15 @@
 import { Router } from "express";
+import { authorize } from "../middlewares/auth.middleware.js";
 import { deleteUser, getUserById, getUsers, updateUser } from "../controllers/users.controller.js";
 
 const userRoutes = Router();
 
-userRoutes.get('/', (req, res) => getUsers);
+userRoutes.get('/',getUsers);
 
-userRoutes.get('/:id', (req, res) => getUserById);
+userRoutes.get('/:id',authorize, getUserById);
 
-userRoutes.put('/:id', (req, res) => updateUser);
+userRoutes.put('/:id', authorize, updateUser);
 
-userRoutes.delete('/:id',(req, res) => deleteUser);
+userRoutes.delete('/:id', authorize, deleteUser);
 
 export default userRoutes;
