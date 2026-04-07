@@ -104,6 +104,22 @@ export const createPost = async (req, res, next) => {
 export const updatePost = async (req, res, next) => {
   try {
     const { p_title, p_body, published, categories, tags } = req.body;
+    const existingPost = await prisma.posts.findUnique({where: {id: req.params.id}});
+    
+    // Check if the post exists
+    if(!existingPost){
+        return res.status(404).json({
+            success: false,
+            message: "Post not found"
+        })
+    }
+    //Find the post to update and check if the logged in user is the author of the post
+    if(existingPost.authorId !== req.user.id) {
+        return res.status(403).json({
+            success: false,
+            message: "You are not allowed to update this post"
+        })
+    }
 
     const updatedData = {};
 
