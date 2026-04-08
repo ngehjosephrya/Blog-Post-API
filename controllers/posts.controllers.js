@@ -22,6 +22,42 @@ export const getPosts = async (req, res, next) => {
   }
 };
 
+export const getPostByUserId = async (req, res, next) => {
+  try {
+    if (req.user.id !== req.params.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to access this resource",
+      });
+    }
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const posts = await prisma.posts.findMany({
+      where: { authorId: req.params.id },
+      select: {
+        id: true,
+        p_title: true,
+        p_body: true,
+        author: { select: { name: true } },
+        categories: { select: { name: true } },
+        published: true,
+        createdAt: true,
+      },
+    });
+    res.status(200).json({
+      success: true,
+      data: posts,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getPostsById = async (req, res, next) => {
   try {
     const post = await prisma.posts.findUnique({
@@ -104,21 +140,23 @@ export const createPost = async (req, res, next) => {
 export const updatePost = async (req, res, next) => {
   try {
     const { p_title, p_body, published, categories, tags } = req.body;
-    const existingPost = await prisma.posts.findUnique({where: {id: req.params.id}});
-    
+    const existingPost = await prisma.posts.findUnique({
+      where: { id: req.params.id },
+    });
+
     // Check if the post exists
-    if(!existingPost){
-        return res.status(404).json({
-            success: false,
-            message: "Post not found"
-        })
+    if (!existingPost) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
     }
     //Find the post to update and check if the logged in user is the author of the post
-    if(existingPost.authorId !== req.user.id) {
-        return res.status(403).json({
-            success: false,
-            message: "You are not allowed to update this post"
-        })
+    if (existingPost.authorId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to update this post",
+      });
     }
 
     const updatedData = {};
@@ -168,6 +206,37 @@ export const updatePost = async (req, res, next) => {
   }
 };
 
-export const deletePost = async (req, res, next) => {};
+export const deletePost = async (req, res, next) => {
+  try {
+    const existingPost = await prisma.posts.findUnique({
+      where: { id: req.params.id },
+    });
 
-export const getPostByUserId = async (req, res, next) => {};
+    // Check if the post exists
+    if (!existingPost) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
+    }
+    //Check if the logged in user is the author of the post
+    if (existingPost.authorId !== req.user.id) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "You are not allowed to delete this post",
+        });
+    }
+
+    await prisma.posts.delete({
+      where: { id: req.params.id },
+    });
+    await prisma.posts.delete({ where: { id: req.params.id } });
+    res.status(200).json({
+      success: true,
+      message: "Post deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
