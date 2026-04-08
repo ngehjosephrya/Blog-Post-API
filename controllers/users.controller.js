@@ -101,6 +101,8 @@ export const deleteUser = async (req, res, next) => {
         const user = await prisma.users.delete({
             where: { id: req.params.id }
         })
+
+        //Check if User exists
         if (!user) {
             return res.status(404).json({
                 success: false,

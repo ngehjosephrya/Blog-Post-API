@@ -1,18 +1,19 @@
 import { Router } from "express";
 import { createPost, deletePost, getPostByUserId, getPosts, getPostsById, updatePost } from "../controllers/posts.controllers.js";
+import { authorize } from "../middlewares/auth.middleware.js";
 
 const postRoutes = Router();
 
-postRoutes.get('/', (req, res) => getPosts);
+postRoutes.get('/', getPosts);
 
-postRoutes.get('/:id', (req, res) => getPostsById);
+postRoutes.get('/:id', authorize, getPostsById);
 
-postRoutes.post('/', (req, res) => createPost);
+postRoutes.post('/', authorize, createPost);
 
-postRoutes.put('/:id', (req, res) => updatePost);
+postRoutes.put('/:id', authorize, updatePost);
 
-postRoutes.delete('/:id', (req, res) => deletePost);
+postRoutes.delete('/:id', authorize, deletePost);
 
-postRoutes.get('/users/:id', (req, res) => getPostByUserId);
+postRoutes.get('/users/:id', authorize, getPostByUserId);
 
 export default postRoutes;
