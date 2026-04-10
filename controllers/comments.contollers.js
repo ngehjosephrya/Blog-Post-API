@@ -17,7 +17,7 @@ export const getComment = async(req, res, next) => {
                 }
             }
         });
-        if(!comment){
+        if(comment.length === 0){
             return res.status(404).json({success:false, message:"No comments found for this post"})
         }
         res.status(200).json({success:true, message:"Comments retrieved successfully", data: comment});
@@ -66,7 +66,7 @@ export const deleteComment = async(req, res, next) => {
         const comment = await prisma.comments.delete({
             where: {id: req.params.id }
         })
-        if(!comment){
+        if(comment.length === 0){
             return res.status(404).json({success:false, message:"Comment not found"})
         }
         res.status(200).json({success:true, message:"Comment deleted successfully", data: comment});

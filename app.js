@@ -6,6 +6,7 @@ import authRouter from "./routes/auth.routes.js"
 import userRoutes from "./routes/user.routes.js";
 import postRoutes from "./routes/post.routes.js";
 import commentRouter from "./routes/comments.routes.js";
+import likeRoutes from "./routes/likes.routes.js";
 import errorMiddleware from "./middlewares/error.middlewares.js";
 
 
@@ -23,6 +24,7 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/posts', postRoutes);
 app.use('/api/v1/comments', commentRouter);
+app.use('/api/v1/likes', likeRoutes);
 
 app.use(errorMiddleware)
 
