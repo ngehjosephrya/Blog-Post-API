@@ -9,4 +9,5 @@ export const {
     JWT_EXPIRES_IN,
     SERVER_URL,
     DATABASE_URL,
+    CLIENT_URL,
 } = process.env;
