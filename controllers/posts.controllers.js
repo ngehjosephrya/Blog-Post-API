@@ -2,20 +2,52 @@ import { prisma } from "../lib/prisma.js";
 
 export const getPosts = async (req, res, next) => {
   try {
-    const posts = await prisma.posts.findMany({
-      select: {
-        id: true,
-        p_title: true,
-        p_body: true,
-        author: { select: { name: true } },
-        categories: { select: { name: true } },
-        published: true,
-        createdAt: true,
+    const { page = 1, limit = 10, search = "" } = req.query;
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const totalPosts = await prisma.posts.count({
+      where: {
+        p_title: {
+          contains: search,
+          mode: "insensitive",
+        },
       },
     });
+
+    const posts = await prisma.posts.findMany({
+      where: {
+        p_title: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      skip,
+      take: Number(limit),
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: {
+          select: { id: true, name: true, email: true },
+        },
+        tags: true,
+        categories: true,
+        _count: {
+          select: { likes: true, comments: true },
+        },
+      },
+    });
+
     res.status(200).json({
       success: true,
       data: posts,
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(totalPosts / Number(limit)),
+        totalPosts,
+        limit: Number(limit),
+        hasNextPage: Number(page) < Math.ceil(totalPosts / Number(limit)),
+        hasPrevPage: Number(page) > 1,
+      },
     });
   } catch (error) {
     next(error);
@@ -220,12 +252,10 @@ export const deletePost = async (req, res, next) => {
     }
     //Check if the logged in user is the author of the post
     if (existingPost.authorId !== req.user.id) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "You are not allowed to delete this post",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to delete this post",
+      });
     }
 
     await prisma.posts.delete({
