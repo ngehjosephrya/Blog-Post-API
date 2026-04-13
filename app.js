@@ -4,7 +4,7 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 
-import { PORT, CLIENT_URL} from "./config/env.js";
+import {CLIENT_URL} from "./config/env.js";
 import authRouter from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import postRoutes from "./routes/post.routes.js";
@@ -57,10 +57,5 @@ app.use("/api/v1/likes", likeRoutes);
 
 // Error handling middleware
 app.use(errorMiddleware);
-
-// Start the server
-app.listen(PORT, async () => {
-  console.log(`Blog Post API successfully running on http://localhost:${PORT}`);
-});
 
 export default app;
