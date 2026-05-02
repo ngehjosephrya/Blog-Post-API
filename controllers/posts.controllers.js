@@ -104,7 +104,11 @@ export const getPostsById = async (req, res, next) => {
         createdAt: true,
       },
     });
-    if (req.user.id !== req.params.id) {
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: "Post not found" });
+    }
+    if (post.authorId !== req.user.id) {
       return res.status(403).json({
         success: false,
         message: "You are not allowed to access this resource",
@@ -261,7 +265,6 @@ export const deletePost = async (req, res, next) => {
     await prisma.posts.delete({
       where: { id: req.params.id },
     });
-    await prisma.posts.delete({ where: { id: req.params.id } });
     res.status(200).json({
       success: true,
       message: "Post deleted successfully",
