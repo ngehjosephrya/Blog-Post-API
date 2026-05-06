@@ -7,8 +7,8 @@ import { commentsSchema, updateCommentsSchema } from "../validations/comments.va
 const commentRouter =  Router();
 
 commentRouter.get('/posts/:id',getComment)
-commentRouter.post('/posts/:id',validate(commentsSchema),authorize, createComment)
-commentRouter.put('/:id',validate(updateCommentsSchema),authorize, updateComment)
+commentRouter.post('/posts/:id',authorize ,validate(commentsSchema), createComment)
+commentRouter.put('/:id',authorize, validate(updateCommentsSchema), updateComment)
 commentRouter.delete('/:id',authorize, deleteComment) 
 
 export default commentRouter;

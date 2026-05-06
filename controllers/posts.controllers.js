@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { uploadImage } from "../lib/uploadImage.js";
 
 export const getPosts = async (req, res, next) => {
   try {
@@ -29,6 +30,7 @@ export const getPosts = async (req, res, next) => {
         author: {
           select: { id: true, name: true, email: true },
         },
+        imageUrl: true,
         tags: true,
         categories: true,
         _count: {
@@ -75,6 +77,7 @@ export const getPostByUserId = async (req, res, next) => {
         id: true,
         p_title: true,
         p_body: true,
+        imageUrl: true,
         author: { select: { name: true } },
         categories: { select: { name: true } },
         published: true,
@@ -98,6 +101,7 @@ export const getPostsById = async (req, res, next) => {
         id: true,
         p_title: true,
         p_body: true,
+        imageUrl: true,
         author: { select: { name: true } },
         categories: { select: { name: true } },
         published: true,
@@ -134,10 +138,16 @@ export const createPost = async (req, res, next) => {
     const { p_title, p_body, published, categories, tags } = req.body;
     const authorId = req.user.id;
 
+    let imageUrl = null;
+    if(req.file){
+      imageUrl = await uploadImage(req.file.buffer);
+    }
+
     const post = await prisma.posts.create({
       data: {
         p_body,
         p_title,
+        imageUrl,
         published: published || false,
         authorId,
         //Connects the post to the categories and tags if they exist, otherwise creates new ones

@@ -126,3 +126,22 @@ export const signOut = async (req, res, next) => {
     next(error);
   }
 };
+
+export const me = async (req, res, next) => {
+  try {
+    const user = await prisma.users.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, name: true, email: true, createdAt: true },
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    next(error);
+  }
+};
