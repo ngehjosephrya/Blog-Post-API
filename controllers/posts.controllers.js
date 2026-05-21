@@ -1,53 +1,75 @@
 import { prisma } from "../lib/prisma.js";
-import { uploadImage } from "../lib/uploadImage.js";
 
+// ─── Shared select shapes ─────────────────────────────────────────────────────
+// Define once, reuse everywhere — keeps queries consistent
+
+const POST_LIST_INCLUDE = {
+  author: {
+    select: { id: true, name: true, email: true },
+  },
+  tags: true,
+  categories: true,
+  _count: {
+    select: { likes: true, comments: true },
+  },
+};
+
+const POST_DETAIL_INCLUDE = {
+  author: {
+    select: { id: true, name: true, email: true },
+  },
+  tags: true,
+  categories: true,
+  comments: {
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      author: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  },
+  _count: {
+    select: { likes: true, comments: true },
+  },
+};
+
+// ─── GET /api/v1/posts ────────────────────────────────────────────────────────
 export const getPosts = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
-
     const skip = (Number(page) - 1) * Number(limit);
 
-    const totalPosts = await prisma.posts.count({
-      where: {
-        p_title: {
-          contains: search,
-          mode: "insensitive",
-        },
+    const where = {
+      published: true, // only show published posts on public feed
+      p_title: {
+        contains: search,
+        mode: "insensitive",
       },
-    });
+    };
 
-    const posts = await prisma.posts.findMany({
-      where: {
-        p_title: {
-          contains: search,
-          mode: "insensitive",
-        },
-      },
-      skip,
-      take: Number(limit),
-      orderBy: { createdAt: "desc" },
-      include: {
-        author: {
-          select: { id: true, name: true, email: true },
-        },
-        imageUrl: true,
-        tags: true,
-        categories: true,
-        _count: {
-          select: { likes: true, comments: true },
-        },
-      },
-    });
+    const [totalPosts, posts] = await Promise.all([
+      prisma.posts.count({ where }),
+      prisma.posts.findMany({
+        where,
+        skip,
+        take: Number(limit),
+        orderBy: { createdAt: "desc" },
+        include: POST_LIST_INCLUDE,
+      }),
+    ]);
 
-    res.status(200).json({
+    const totalPages = Math.ceil(totalPosts / Number(limit));
+
+    return res.status(200).json({
       success: true,
       data: posts,
       pagination: {
         currentPage: Number(page),
-        totalPages: Math.ceil(totalPosts / Number(limit)),
+        totalPages,
         totalPosts,
         limit: Number(limit),
-        hasNextPage: Number(page) < Math.ceil(totalPosts / Number(limit)),
+        hasNextPage: Number(page) < totalPages,
         hasPrevPage: Number(page) > 1,
       },
     });
@@ -56,75 +78,22 @@ export const getPosts = async (req, res, next) => {
   }
 };
 
-export const getPostByUserId = async (req, res, next) => {
-  try {
-    if (req.user.id !== req.params.id) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not allowed to access this resource",
-      });
-    }
-
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
-
-    const posts = await prisma.posts.findMany({
-      where: { authorId: req.params.id },
-      select: {
-        id: true,
-        p_title: true,
-        p_body: true,
-        imageUrl: true,
-        author: { select: { name: true } },
-        categories: { select: { name: true } },
-        published: true,
-        createdAt: true,
-      },
-    });
-    res.status(200).json({
-      success: true,
-      data: posts,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
+// ─── GET /api/v1/posts/:id ────────────────────────────────────────────────────
 export const getPostsById = async (req, res, next) => {
   try {
     const post = await prisma.posts.findUnique({
       where: { id: req.params.id },
-      select: {
-        id: true,
-        p_title: true,
-        p_body: true,
-        imageUrl: true,
-        author: { select: { name: true } },
-        categories: { select: { name: true } },
-        published: true,
-        createdAt: true,
-      },
+      include: POST_DETAIL_INCLUDE,
     });
 
     if (!post) {
-      return res.status(404).json({ success: false, message: "Post not found" });
-    }
-    if (post.authorId !== req.user.id) {
-      return res.status(403).json({
+      return res.status(404).json({
         success: false,
-        message: "You are not allowed to access this resource",
+        message: "Post not found",
       });
     }
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: post,
     });
@@ -133,47 +102,73 @@ export const getPostsById = async (req, res, next) => {
   }
 };
 
+// ─── GET /api/v1/posts/users/:id ─────────────────────────────────────────────
+export const getPostByUserId = async (req, res, next) => {
+  try {
+    // Only the logged-in user can see their own posts (including drafts)
+    if (req.user.id !== req.params.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to access this resource",
+      });
+    }
+
+    const posts = await prisma.posts.findMany({
+      where: { authorId: req.params.id },
+      include: {
+        categories: { select: { name: true } },
+        tags: { select: { name: true } },
+        _count: {
+          select: { likes: true, comments: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: posts,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── POST /api/v1/posts ───────────────────────────────────────────────────────
 export const createPost = async (req, res, next) => {
   try {
-    const { p_title, p_body, published, categories, tags } = req.body;
+    const { p_title, p_body, imageUrl, published, categories, tags } = req.body;
     const authorId = req.user.id;
 
-    let imageUrl = null;
-    if(req.file){
-      imageUrl = await uploadImage(req.file.buffer);
-    }
+    // imageUrl comes as a string from the frontend
+    // (frontend uploads to Cloudinary first, gets URL back, sends URL here)
 
     const post = await prisma.posts.create({
       data: {
-        p_body,
         p_title,
-        imageUrl,
-        published: published || false,
+        p_body,
+        imageUrl:  imageUrl  ?? null,
+        published: published ?? false,
         authorId,
-        //Connects the post to the categories and tags if they exist, otherwise creates new ones
         categories: {
           connectOrCreate:
             categories?.map((name) => ({
-              where: { name },
+              where:  { name },
               create: { name },
-            })) || [],
+            })) ?? [],
         },
-        //Connects the post to the tags if they exist, otherwise creates new ones
         tags: {
           connectOrCreate:
             tags?.map((name) => ({
-              where: { name },
+              where:  { name },
               create: { name },
-            })) || [],
+            })) ?? [],
         },
       },
-      include: {
-        author: { select: { id: true, name: true, email: true } },
-        categories: true,
-        tags: true,
-      },
+      include: POST_DETAIL_INCLUDE,
     });
-    res.status(201).json({
+
+    return res.status(201).json({
       success: true,
       message: "Post created successfully",
       data: post,
@@ -183,21 +178,20 @@ export const createPost = async (req, res, next) => {
   }
 };
 
+// ─── PUT /api/v1/posts/:id ────────────────────────────────────────────────────
 export const updatePost = async (req, res, next) => {
   try {
-    const { p_title, p_body, published, categories, tags } = req.body;
     const existingPost = await prisma.posts.findUnique({
       where: { id: req.params.id },
     });
 
-    // Check if the post exists
     if (!existingPost) {
       return res.status(404).json({
         success: false,
         message: "Post not found",
       });
     }
-    //Find the post to update and check if the logged in user is the author of the post
+
     if (existingPost.authorId !== req.user.id) {
       return res.status(403).json({
         success: false,
@@ -205,29 +199,30 @@ export const updatePost = async (req, res, next) => {
       });
     }
 
-    const updatedData = {};
+    const { p_title, p_body, imageUrl, published, categories, tags } = req.body;
 
-    if (p_title) updatedData.p_title = p_title;
-    if (p_body) updatedData.p_body = p_body;
-    if (published !== undefined) updatedData.published = published;
+    // Build update payload dynamically — only include fields that were sent
+    const data = {};
+    if (p_title    !== undefined) data.p_title   = p_title;
+    if (p_body     !== undefined) data.p_body    = p_body;
+    if (imageUrl   !== undefined) data.imageUrl  = imageUrl;
+    if (published  !== undefined) data.published = published;
 
-    // Handle categories update
-    if (categories) {
-      updatedData.categories = {
-        set: [], // Clear existing categories
-        connectOrCreate:
-          categories.map((name) => ({
-            where: { name },
-            create: { name },
-          })) || [],
+    if (categories !== undefined) {
+      data.categories = {
+        set: [],   // clear existing
+        connectOrCreate: categories.map((name) => ({
+          where:  { name },
+          create: { name },
+        })),
       };
     }
-    // Handle tags update
-    if (tags) {
-      updatedData.tags = {
-        set: [], // Clear existing tags
+
+    if (tags !== undefined) {
+      data.tags = {
+        set: [],   // clear existing
         connectOrCreate: tags.map((name) => ({
-          where: { name },
+          where:  { name },
           create: { name },
         })),
       };
@@ -235,14 +230,11 @@ export const updatePost = async (req, res, next) => {
 
     const post = await prisma.posts.update({
       where: { id: req.params.id },
-      data: updatedData,
-      include: {
-        author: { select: { id: true, name: true, email: true } },
-        categories: true,
-        tags: true,
-      },
+      data,
+      include: POST_DETAIL_INCLUDE,
     });
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
       message: "Post updated successfully",
       data: post,
@@ -252,19 +244,20 @@ export const updatePost = async (req, res, next) => {
   }
 };
 
+// ─── DELETE /api/v1/posts/:id ─────────────────────────────────────────────────
 export const deletePost = async (req, res, next) => {
   try {
     const existingPost = await prisma.posts.findUnique({
       where: { id: req.params.id },
     });
 
-    // Check if the post exists
     if (!existingPost) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Post not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
     }
-    //Check if the logged in user is the author of the post
+
     if (existingPost.authorId !== req.user.id) {
       return res.status(403).json({
         success: false,
@@ -275,7 +268,8 @@ export const deletePost = async (req, res, next) => {
     await prisma.posts.delete({
       where: { id: req.params.id },
     });
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
       message: "Post deleted successfully",
     });

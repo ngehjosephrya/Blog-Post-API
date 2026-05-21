@@ -50,8 +50,12 @@ export const signUp = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.log("Error:", error);
-    next(error);
+    console.log("Error:", error.message);
+    return res.status(500).json({ 
+      success: false,
+      message: "An error occurred while creating the user",
+      error,
+    });
   }
 };
 
@@ -111,7 +115,7 @@ export const signIn = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    next(error.message);
   }
 };
 

@@ -10,7 +10,7 @@ export const {
     SERVER_URL,
     DATABASE_URL,
     CLIENT_URL,
-    CLOUDINARY_NAME,
+    CLOUDINARY_NAME, 
     CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET,
 } = process.env;

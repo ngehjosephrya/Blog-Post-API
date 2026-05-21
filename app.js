@@ -11,6 +11,7 @@ import postRoutes from "./routes/post.routes.js";
 import commentRouter from "./routes/comments.routes.js";
 import likeRoutes from "./routes/likes.routes.js";
 import errorMiddleware from "./middlewares/error.middlewares.js";
+import uploadRouter from "./routes/upload.routes.js";
 
 
 const app = express();
@@ -54,7 +55,8 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/posts", postRoutes);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/likes", likeRoutes);
-
+app.use("/api/v1/upload", uploadRouter);
+ 
 // Error handling middleware
 app.use(errorMiddleware);
 
