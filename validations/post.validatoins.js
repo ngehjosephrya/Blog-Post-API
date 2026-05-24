@@ -2,7 +2,8 @@ import { z } from "zod";
 
 export const createPostSchema = z.object({
   p_title: z.string().min(5, "Title must be at least 5 characters long"),
-  p_body: z.string().min(10, "Content must be at least 10 characters long"),
+  p_body:  z.string().min(10, "Content must be at least 10 characters long"),
+  imageUrl: z.string().optional().nullable(),
   published: z
     .union([z.boolean(), z.string()])
     .transform((val) => val === "true" || val === true)
@@ -16,14 +17,9 @@ export const createPostSchema = z.object({
 });
 
 export const updatePostSchema = z.object({
-  p_title: z
-    .string()
-    .min(5, "Title must be at least 5 characters long")
-    .optional(),
-  p_body: z
-    .string()
-    .min(10, "Content must be at least 10 characters long")
-    .optional(),
+  p_title: z.string().min(5, "Title must be at least 5 characters long").optional(),
+  p_body:  z.string().min(10, "Content must be at least 10 characters long").optional(),
+  imageUrl: z.string().optional().nullable(), 
   published: z
     .union([z.boolean(), z.string()])
     .transform((val) => val === "true" || val === true)

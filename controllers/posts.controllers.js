@@ -1,8 +1,5 @@
 import { prisma } from "../lib/prisma.js";
 
-// ─── Shared select shapes ─────────────────────────────────────────────────────
-// Define once, reuse everywhere — keeps queries consistent
-
 const POST_LIST_INCLUDE = {
   author: {
     select: { id: true, name: true, email: true },
@@ -34,14 +31,13 @@ const POST_DETAIL_INCLUDE = {
   },
 };
 
-// ─── GET /api/v1/posts ────────────────────────────────────────────────────────
 export const getPosts = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
     const where = {
-      published: true, // only show published posts on public feed
+      published: true, 
       p_title: {
         contains: search,
         mode: "insensitive",
@@ -78,7 +74,6 @@ export const getPosts = async (req, res, next) => {
   }
 };
 
-// ─── GET /api/v1/posts/:id ────────────────────────────────────────────────────
 export const getPostsById = async (req, res, next) => {
   try {
     const post = await prisma.posts.findUnique({
@@ -102,10 +97,8 @@ export const getPostsById = async (req, res, next) => {
   }
 };
 
-// ─── GET /api/v1/posts/users/:id ─────────────────────────────────────────────
 export const getPostByUserId = async (req, res, next) => {
   try {
-    // Only the logged-in user can see their own posts (including drafts)
     if (req.user.id !== req.params.id) {
       return res.status(403).json({
         success: false,
@@ -134,14 +127,10 @@ export const getPostByUserId = async (req, res, next) => {
   }
 };
 
-// ─── POST /api/v1/posts ───────────────────────────────────────────────────────
 export const createPost = async (req, res, next) => {
   try {
     const { p_title, p_body, imageUrl, published, categories, tags } = req.body;
     const authorId = req.user.id;
-
-    // imageUrl comes as a string from the frontend
-    // (frontend uploads to Cloudinary first, gets URL back, sends URL here)
 
     const post = await prisma.posts.create({
       data: {
@@ -178,7 +167,6 @@ export const createPost = async (req, res, next) => {
   }
 };
 
-// ─── PUT /api/v1/posts/:id ────────────────────────────────────────────────────
 export const updatePost = async (req, res, next) => {
   try {
     const existingPost = await prisma.posts.findUnique({
@@ -201,7 +189,6 @@ export const updatePost = async (req, res, next) => {
 
     const { p_title, p_body, imageUrl, published, categories, tags } = req.body;
 
-    // Build update payload dynamically — only include fields that were sent
     const data = {};
     if (p_title    !== undefined) data.p_title   = p_title;
     if (p_body     !== undefined) data.p_body    = p_body;
@@ -210,7 +197,7 @@ export const updatePost = async (req, res, next) => {
 
     if (categories !== undefined) {
       data.categories = {
-        set: [],   // clear existing
+        set: [],   
         connectOrCreate: categories.map((name) => ({
           where:  { name },
           create: { name },
@@ -220,7 +207,7 @@ export const updatePost = async (req, res, next) => {
 
     if (tags !== undefined) {
       data.tags = {
-        set: [],   // clear existing
+        set: [], 
         connectOrCreate: tags.map((name) => ({
           where:  { name },
           create: { name },
@@ -244,7 +231,6 @@ export const updatePost = async (req, res, next) => {
   }
 };
 
-// ─── DELETE /api/v1/posts/:id ─────────────────────────────────────────────────
 export const deletePost = async (req, res, next) => {
   try {
     const existingPost = await prisma.posts.findUnique({

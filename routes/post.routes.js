@@ -8,15 +8,13 @@ import upload from "../middlewares/upload.middlewares.js";
 const postRoutes = Router();
 
 postRoutes.get('/', getPosts);
-
+postRoutes.get('/users/:id', authorize, getPostByUserId);
 postRoutes.get('/:id', authorize, getPostsById);
 
-postRoutes.post('/',authorize,upload.single('image'), validate(createPostSchema), createPost);
+postRoutes.post('/',authorize, validate(createPostSchema), createPost);
 
 postRoutes.put('/:id',authorize, validate(updatePostSchema), updatePost);
-
 postRoutes.delete('/:id', authorize, deletePost);
 
-postRoutes.get('/users/:id', authorize, getPostByUserId);
 
 export default postRoutes;
