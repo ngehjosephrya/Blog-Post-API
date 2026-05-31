@@ -2,7 +2,7 @@ import { prisma } from "../lib/prisma.js";
 
 const POST_LIST_INCLUDE = {
   author: {
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, avatarUrl: true },
   },
   tags: true,
   categories: true,
@@ -13,7 +13,7 @@ const POST_LIST_INCLUDE = {
 
 const POST_DETAIL_INCLUDE = {
   author: {
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, avatarUrl: true },
   },
   tags: true,
   categories: true,
@@ -22,7 +22,7 @@ const POST_DETAIL_INCLUDE = {
       id: true,
       content: true,
       createdAt: true,
-      author: { select: { id: true, name: true } },
+      author: { select: { id: true, name: true, avatarUrl: true} },
     },
     orderBy: { createdAt: "desc" },
   },
@@ -109,6 +109,7 @@ export const getPostByUserId = async (req, res, next) => {
     const posts = await prisma.posts.findMany({
       where: { authorId: req.params.id },
       include: {
+        author: { select: { id: true, name: true, email: true } },
         categories: { select: { name: true } },
         tags: { select: { name: true } },
         _count: {

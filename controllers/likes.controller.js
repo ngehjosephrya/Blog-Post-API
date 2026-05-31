@@ -6,6 +6,8 @@ export const getPostLikes = async(req, res, next) => {
             where: {postId: req.params.id},
             select: {
                 id: true,
+                userId: true,
+                postId: true,
                 createdAt: true,
                 user: {
                     select: {
@@ -21,9 +23,6 @@ export const getPostLikes = async(req, res, next) => {
                 }
             }
         })
-        if(likes.length === 0){
-            return res.status(404).json({success:false, message:"No likes found for this post"})
-        }
         res.status(200).json({success:true, message:"Likes retrieved successfully", data: likes});
     } catch (error) {
         next(error)

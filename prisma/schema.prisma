@@ -16,6 +16,7 @@ model Users {
   name      String
   email     String     @unique
   password  String
+  avatarUrl String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   posts     Posts[]
@@ -37,6 +38,10 @@ model Posts {
   likes      Likes[]
   categories Categories[]
   tags       Tags[]
+
+  @@index([authorId])
+  @@index([published])
+  @@index([createdAt])
 }
 
 model Comments {
@@ -48,6 +53,9 @@ model Comments {
   authorId  String
   post      Posts    @relation(fields: [postId], references: [id])
   postId    String
+
+  @@index([postId])
+  @@index([authorId])
 }
 
 model Likes {
@@ -59,6 +67,7 @@ model Likes {
   postId    String
 
   @@unique([userId, postId])
+  @@index([postId])
 }
 
 model Categories {

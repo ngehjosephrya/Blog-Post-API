@@ -16,7 +16,7 @@ export const authorize = async (req, res, next) => {
     }
 
     if (!token) {
-      res.status(401).json({
+      return res.status(401).json({
         message: NODE_ENV === "production"
             ? "Unauthorized"
             : "Unauthorized ->No token provided",
@@ -45,7 +45,7 @@ export const authorize = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    res.status(401).json({
+    return res.status(401).json({
       message: NODE_ENV === "production"
         ? "Unauthorized"
         : "Unauthorized -> Invalid or expired token",

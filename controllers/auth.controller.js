@@ -25,6 +25,7 @@ export const signUp = async (req, res, next) => {
         id: true,
         name: true,
         email: true,
+        avatarUrl: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -79,7 +80,8 @@ export const signIn = async (req, res, next) => {
         id: true,
         name: true,
         email: true,
-        password: true, // needed here for bcrypt.compare
+        avatarUrl: true,
+        password: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -135,7 +137,7 @@ export const me = async (req, res, next) => {
   try {
     const user = await prisma.users.findUnique({
       where: { id: req.user.id },
-      select: { id: true, name: true, email: true, createdAt: true },
+      select: { id: true, name: true, email: true, avatarUrl:true, createdAt: true },
     });
 
     if (!user) {

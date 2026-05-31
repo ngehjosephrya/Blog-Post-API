@@ -1,9 +1,15 @@
 import { prisma } from "../lib/prisma.js";
 
 export const getComment = async (req, res, next) => {
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (Number(page) - 1) * Number(limit);
+
   try {
     const comment = await prisma.comments.findMany({
       where: { postId: req.params.id },
+      skip,
+      take: Number(limit),
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         content: true,
@@ -21,13 +27,11 @@ export const getComment = async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "No comments found for this post" });
     }
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Comments retrieved successfully",
-        data: comment,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Comments retrieved successfully",
+      data: comment,
+    });
   } catch (error) {
     next(error);
   }
@@ -43,14 +47,21 @@ export const createComment = async (req, res, next) => {
         post: { connect: { id: postId } },
         author: { connect: { id: req.user.id } },
       },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+      },
     });
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Comment created successfully",
-        data: comment,
-      });
+    res.status(201).json({
+      success: true,
+      message: "Comment created successfully",
+      data: comment,
+    });
   } catch (error) {
     next(error);
   }
@@ -72,16 +83,29 @@ export const updateComment = async (req, res, next) => {
     }
 
     if (existing.authorId !== req.user.id) {
-      return res.status(403).json({success: false,message: "You are not allowed to update this comment",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to update this comment",
+      });
     }
     const comment = await prisma.comments.update({
       where: { id: commentId },
-      data: {
-        content,
+      data: { content },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
       },
     });
-    res.status(200).json({success: true, message: "Comment updated successfully",data: comment,});
+    res.status(200).json({
+      success: true,
+      message: "Comment updated successfully",
+      data: comment,
+    });
   } catch (error) {
     next(error);
   }
@@ -103,13 +127,11 @@ export const deleteComment = async (req, res, next) => {
       where: { id: req.params.id },
     });
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Comment deleted successfully",
-        data: comment,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Comment deleted successfully",
+      data: comment,
+    });
   } catch (error) {
     next(error);
   }
