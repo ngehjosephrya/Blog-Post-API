@@ -46,7 +46,7 @@ export const signUp = async (req, res, next) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
       message: "An error occurred while creating the user",
       error,
@@ -100,6 +100,7 @@ export const signIn = async (req, res, next) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: NODE_ENV === "production",
+      sameSite: NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -117,7 +118,11 @@ export const signIn = async (req, res, next) => {
 
 export const signOut = async (req, res, next) => {
   try {
-    res.clearCookie("token");
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: NODE_ENV === "production",
+      sameSite: NODE_ENV === "production" ? "none" : "lax",
+    });
     res.status(200).json({
       success: true,
       message: "User signed out successfully",
@@ -131,7 +136,13 @@ export const me = async (req, res, next) => {
   try {
     const user = await prisma.users.findUnique({
       where: { id: req.user.id },
-      select: { id: true, name: true, email: true, avatarUrl:true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
     });
 
     if (!user) {
