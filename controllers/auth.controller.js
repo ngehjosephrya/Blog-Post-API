@@ -6,10 +6,8 @@ import { JWT_EXPIRES_IN, JWT_SECRET, NODE_ENV } from "../config/env.js";
 export const signUp = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
-    console.log("1. Request received", req.body);
 
     const existingUser = await prisma.users.findUnique({ where: { email } });
-    console.log("2. DB check done");
 
     if (existingUser) {
       return res.status(404).json({ message: "This Email is already in use" });
@@ -17,7 +15,6 @@ export const signUp = async (req, res, next) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    console.log("3. Password hashed");
 
     const newUser = await prisma.users.create({
       data: { name, email, password: hashedPassword },
@@ -30,12 +27,10 @@ export const signUp = async (req, res, next) => {
         updatedAt: true,
       },
     });
-    console.log("4. User created");
 
     const token = jwt.sign({ userId: newUser.id }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
-    console.log("5. JWT token generated");
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -51,7 +46,6 @@ export const signUp = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.log("Error:", error.message);
     return res.status(500).json({ 
       success: false,
       message: "An error occurred while creating the user",

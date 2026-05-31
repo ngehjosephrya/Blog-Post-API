@@ -7,7 +7,6 @@ import { PORT } from "../config/env.js";
 const server = http.createServer(app);
 
 server.listen(PORT, () => {
-  console.log(`Blog Post API successfully running on http://localhost:${PORT}`);
 });
 
 server.on("error", (error) => {
@@ -28,5 +27,4 @@ server.on("error", (error) => {
 });
 
 server.on("close", () => {
-  console.log("Server closed");
 });
