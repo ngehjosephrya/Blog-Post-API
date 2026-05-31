@@ -16,6 +16,8 @@ import uploadRouter from "./routes/upload.routes.js";
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 // CORS Middleware
 app.use(
   cors({
@@ -34,11 +36,15 @@ app.use(cookieParser());
 
 //Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per 15 minutes per IP
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: {
     success: false,
     message: "Too many requests, please try again after 15 minutes",
+  },
+  validate: {
+    xForwardedForHeader: false,
+    trustProxy: false,
   },
 });
 
