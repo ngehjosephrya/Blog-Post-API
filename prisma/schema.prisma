@@ -10,19 +10,20 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // directUrl = env("DIRECT_URL")
 }
 model Users {
-  id        String     @id @default(uuid())
+  id        String     @id
   name      String
   email     String     @unique
-  password  String
   avatarUrl String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   posts     Posts[]
   comments  Comments[]
   likes     Likes[]
+  followers Follows[] @relation("follower")
+  following Follows[] @relation("following")
 }
 
 model Posts {
@@ -81,4 +82,17 @@ model Tags {
   id    String  @id @default(uuid())
   name  String  @unique
   posts Posts[]
+}
+
+model Follows {
+  id         String   @id @default(uuid())
+  createdAt  DateTime @default(now())
+  follower   Users    @relation("Follower", fields: [followerId], references: [id])
+  followerId String
+  following  Users    @relation("Following", fields: [followingId], references: [id])
+  followingId String
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }

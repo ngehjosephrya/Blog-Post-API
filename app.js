@@ -5,13 +5,13 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 
 import {CLIENT_URL} from "./config/env.js";
-import authRouter from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import postRoutes from "./routes/post.routes.js";
 import commentRouter from "./routes/comments.routes.js";
 import likeRoutes from "./routes/likes.routes.js";
 import errorMiddleware from "./middlewares/error.middlewares.js";
 import uploadRouter from "./routes/upload.routes.js";
+import followsRouter from "./routes/follows.routes.js";
 
 
 const app = express();
@@ -56,12 +56,12 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/posts", postRoutes);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/likes", likeRoutes);
 app.use("/api/v1/upload", uploadRouter);
+app.use("/api/v1/follows", followsRouter);
  
 // Error handling middleware
 app.use(errorMiddleware);

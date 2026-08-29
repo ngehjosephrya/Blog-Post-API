@@ -4,6 +4,13 @@ import { deleteUser, getUserById, getUsers, updateUser } from "../controllers/us
 
 const userRoutes = Router();
 
+userRoutes.get('/me', authorize, async (req, res) => {
+  res.status(201).json({
+    success: true,
+    data: req.user,
+  });
+});
+
 userRoutes.get('/',getUsers);
 
 userRoutes.get('/:id',authorize, getUserById);

@@ -4,6 +4,7 @@ import { authorize } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middlewares.js";
 import { createPostSchema, updatePostSchema } from "../validations/post.validatoins.js";
 import upload from "../middlewares/upload.middlewares.js";
+import { getFollowing} from "../controllers/follows.controller.js";
 
 const postRoutes = Router();
 
@@ -15,6 +16,8 @@ postRoutes.post('/',authorize, validate(createPostSchema), createPost);
 
 postRoutes.put('/:id',authorize, validate(updatePostSchema), updatePost);
 postRoutes.delete('/:id', authorize, deletePost);
+
+postRoutes.get("/feed", authorize, getFollowing);
 
 
 export default postRoutes;

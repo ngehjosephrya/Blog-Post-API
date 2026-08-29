@@ -13,4 +13,6 @@ export const {
     CLOUDINARY_NAME, 
     CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET,
+    SUPABASE_URL,
+    SUPABASE_KEY,
 } = process.env;
