@@ -264,3 +264,64 @@ export const deletePost = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getFollowingFeed = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const following = await prisma.follows.findMany({
+      where:  { followerId: req.user.id },
+      select: { followingId: true },
+    });
+
+    const followingIds = following.map((f) => f.followingId);
+
+    if (followingIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data:    [],
+        pagination: {
+          currentPage: Number(page),
+          totalPages:  0,
+          totalPosts:  0,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+      });
+    }
+
+    const where = {
+      authorId:  { in: followingIds },
+      published: true,
+    };
+
+    const [totalPosts, posts] = await Promise.all([
+      prisma.posts.count({ where }),
+      prisma.posts.findMany({
+        where,
+        skip,
+        take:     Number(limit),
+        orderBy:  { createdAt: "desc" },
+        include:  POST_LIST_INCLUDE,
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalPosts / Number(limit));
+
+    return res.status(200).json({
+      success: true,
+      data:    posts,
+      pagination: {
+        currentPage: Number(page),
+        totalPages,
+        totalPosts,
+        limit:       Number(limit),
+        hasNextPage: Number(page) < totalPages,
+        hasPrevPage: Number(page) > 1,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
